@@ -1,8 +1,9 @@
 ﻿export type SupportedLanguage =
+  | 'c'
+  | 'cpp'
   | 'typescript'
   | 'javascript'
   | 'python'
-  | 'cpp'
   | 'rust'
   | 'go'
   | 'java'
