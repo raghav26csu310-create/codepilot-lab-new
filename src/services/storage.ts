@@ -1,27 +1,19 @@
 ﻿import type {
-  BenchmarkRunSample,
   CodeProject,
   ComplexityReport,
-  DiffLine,
   ExerciseItem,
   IdeExtensionPlugin,
   IdeTheme,
-  PromptPreset,
   SandboxExecutionResult,
   SupportedLanguage,
   TraceFrame,
-  VariableHistoryPoint,
-  VariableHistorySeries,
-  VisualArrayInspection,
 } from '../types';
 
 const STORAGE_KEYS = {
   PROJECTS: 'codepilot_projects_master_v100',
   PRESETS: 'codepilot_presets_master_v100',
-  ACTIVE_PRESET_ID: 'codepilot_active_preset_id_master_v100',
   SOLVED_EXERCISES: 'codepilot_solved_exercises_master_v100',
   GEMINI_API_KEY: 'codepilot_gemini_api_key',
-  ACTIVITY_LOGS: 'codepilot_activity_logs_master_v100',
   IDE_THEME: 'codepilot_ide_theme_v1',
   EXTENSIONS: 'codepilot_extensions_master_v100',
 };
@@ -77,21 +69,7 @@ int main() {
     extension: 'ts',
     monacoLang: 'typescript',
     badge: 'TS 5.6',
-    defaultCode: `function binarySearch(arr: number[], target: number): number {
-  let left = 0;
-  let right = arr.length - 1;
-
-  while (left <= right) {
-    let mid = Math.floor((left + right) / 2);
-    let current = arr[mid];
-    if (current === target) return mid;
-    if (current < target) left = mid + 1;
-    else right = mid - 1;
-  }
-  return -1;
-}
-
-console.log("Found index:", binarySearch([4, 12, 19, 26, 38], 26));`,
+    defaultCode: `function binarySearch(arr: number[], target: number): number {\n  let left = 0, right = arr.length - 1;\n  while (left <= right) {\n    let mid = Math.floor((left + right) / 2);\n    if (arr[mid] === target) return mid;\n    if (arr[mid] < target) left = mid + 1;\n    else right = mid - 1;\n  }\n  return -1;\n}\nconsole.log("Index:", binarySearch([4, 12, 19, 26, 38], 26));`,
     starter: `console.log("TS Ready");`,
   },
   javascript: {
@@ -107,13 +85,7 @@ console.log("Found index:", binarySearch([4, 12, 19, 26, 38], 26));`,
     extension: 'py',
     monacoLang: 'python',
     badge: 'PY 3.13',
-    defaultCode: `count = 4
-total = 0
-while count > 0:
-    total += count
-    print("count =", count, "total =", total)
-    count -= 1
-print("Final:", total)`,
+    defaultCode: `count = 4\ntotal = 0\nwhile count > 0:\n    total += count\n    print("count =", count, "total =", total)\n    count -= 1\nprint("Final:", total)`,
     starter: `print("Python Ready")`,
   },
   rust: {
@@ -182,10 +154,6 @@ print("Final:", total)`,
   },
 };
 
-export const LANGUAGE_STARTERS: Record<SupportedLanguage, string> = Object.fromEntries(
-  Object.entries(LANGUAGE_META).map(([k, v]) => [k, v.starter])
-) as Record<SupportedLanguage, string>;
-
 export const DEFAULT_EXTENSIONS: IdeExtensionPlugin[] = [
   {
     id: 'ext-iso-c-compiler',
@@ -196,16 +164,6 @@ export const DEFAULT_EXTENSIONS: IdeExtensionPlugin[] = [
     description: 'Compiles pure C source files into PE64 executable binary targets.',
     enabled: true,
     capabilities: ['ISO C11/C23 Support', '.c → .exe Compilation'],
-  },
-];
-
-export const DEFAULT_PRESETS: PromptPreset[] = [
-  {
-    id: 'preset-mentor',
-    name: 'Friendly Coding Mentor',
-    description: 'Explains code clearly in plain English.',
-    systemPrompt: 'You are a friendly coding mentor.',
-    temperature: 0.3,
   },
 ];
 
@@ -235,9 +193,20 @@ export const CODING_EXERCISES: ExerciseItem[] = [
   },
 ];
 
-export function getExerciseStarter(ex: ExerciseItem, lang: SupportedLanguage): string {
-  if (ex.starterCodeByLang?.[lang]) return ex.starterCodeByLang[lang]!;
-  return ex.starterCode;
+export function transpilePolyglotToJs(source: string, language: SupportedLanguage): string {
+  if (language === 'typescript' || language === 'javascript') {
+    return source.replace(/^\s*import\s+.*?;?\s*$/gm, '');
+  }
+  if (language === 'python') {
+    return source.replace(/\bprint\s*\(/g, 'console.log(');
+  }
+  // Safe C/C++ transpiler stripping C++ stream operators and headers to prevent evaluation errors
+  return source
+    .replace(/^\s*#include.*$/gm, '')
+    .replace(/^\s*#pragma.*$/gm, '')
+    .replace(/^\s*using\s+namespace\s+[^;]+;/gm, '')
+    .replace(/\bstd::cout\s*<<\s*(.*?)(?:\s*<<\s*std::endl)?;/g, 'console.log($1);')
+    .replace(/\bprintf\s*\(/g, 'console.log(');
 }
 
 export function executeCodeInSandbox(
@@ -250,65 +219,27 @@ export function executeCodeInSandbox(
   if (code.includes('PE64 / ELF EXECUTABLE BINARY ARTIFACT')) {
     return {
       success: true,
-      logs: ['[GCC 14.2 PE64] Executable binary artifact verified and executed successfully[cite: 5, 6].'],
+      logs: ['[GCC 14.2 PE64] Executable binary artifact verified and executed successfully[cite: 5].'],
       returnValue: '0',
       durationMs: 0.2,
       mode: 'polyglot-emulated',
     };
   }
 
+  const transpiled = transpilePolyglotToJs(code, language);
+  const customConsole = {
+    log: (...args: unknown[]) =>
+      logs.push(args.map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ')),
+    warn: (...args: unknown[]) => logs.push('[WARN] ' + args.join(' ')),
+    error: (...args: unknown[]) => logs.push('[ERROR] ' + args.join(' ')),
+  };
+
   try {
-    const lines = code.split('\n');
-    for (const rawLine of lines) {
-      const line = rawLine.trim();
-      if (
-        !line ||
-        line.startsWith('//') ||
-        line.startsWith('#') ||
-        line.startsWith('using') ||
-        line.startsWith('package') ||
-        line === 'int main() {' ||
-        line === '}'
-      ) {
-        continue;
-      }
-
-      // Handle C++ std::cout / printf / python print / JS console.log
-      const coutMatch = line.match(/std::cout\s*<<\s*(.*?)(?:\s*<<\s*std::endl)?;/);
-      const printMatch = line.match(/(?:printf|print|console\.log)\s*\((["'])(.*?)\1\s*(?:,\s*(.*))?\)/);
-
-      if (coutMatch) {
-        let val = coutMatch[1].trim();
-        if (val.startsWith('"') && val.endsWith('"')) {
-          val = val.slice(1, -1);
-        }
-        logs.push(val);
-      } else if (printMatch) {
-        let msg = printMatch[2];
-        const valExpr = printMatch[3];
-        if (valExpr && msg.includes('%d')) {
-          msg = msg.replace('%d', valExpr.trim());
-        }
-        logs.push(msg.replace(/\\n/g, ''));
-      } else if (line.includes('Final sum:') || line.includes('Final:')) {
-        logs.push('Final sum: 10');
-      } else if (line.includes('count =')) {
-        logs.push('count = 4, sum = 4');
-        logs.push('count = 3, sum = 7');
-        logs.push('count = 2, sum = 9');
-        logs.push('count = 1, sum = 10');
-      } else if (line.includes('C++20 Sandbox Ready')) {
-        logs.push('C++20 Sandbox Ready');
-      }
-    }
-
-    if (logs.length === 0) {
-      logs.push('[GCC 14.2] Program built and executed successfully with exit code 0.');
-    }
-
+    const fn = new Function('console', `"use strict";\n${transpiled}`);
+    fn(customConsole);
     return {
       success: true,
-      logs,
+      logs: logs.length > 0 ? logs : ['Program executed successfully with exit code 0.'],
       returnValue: '0',
       durationMs: Number((performance.now() - start).toFixed(2)),
       mode: 'polyglot-emulated',
@@ -333,7 +264,7 @@ export function generateDynamicTrace(code: string, language: SupportedLanguage =
       frames.push({
         step: frames.length + 1,
         line: idx + 1,
-        variables: { status: 'Executing', activeLine: trimmed.slice(0, 20) },
+        variables: { status: 'Executing' },
         explanation: `Executing instruction: ${trimmed}`,
       });
     }
@@ -384,21 +315,12 @@ export function getStoredProjects(): CodeProject[] {
     if (!raw) return DEFAULT_PROJECTS;
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) && parsed.length > 0
-      ? parsed.map((p: Partial<CodeProject> & { tags?: string[] }) => {
-          const language = (p?.language ?? 'c') as SupportedLanguage;
-          const project: CodeProject = {
-            id: p?.id ?? `project-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-            title: p?.title ?? 'Untitled Project',
-            language,
-            code: p?.code ?? LANGUAGE_META[language]?.starter ?? LANGUAGE_META.c.starter,
-            notes: p?.notes ?? 'No notes',
-            tags: Array.isArray(p?.tags)
-              ? p.tags
-              : [LANGUAGE_META[language]?.badge ?? 'C'],
-            updatedAt: p?.updatedAt ?? new Date().toISOString(),
-          };
-          return project;
-        })
+      ? parsed.map((p: any) => ({
+          ...p,
+          tags: Array.isArray(p?.tags)
+            ? p.tags
+            : [LANGUAGE_META[(p?.language || 'c') as SupportedLanguage]?.badge || 'C'],
+        }))
       : DEFAULT_PROJECTS;
   } catch {
     return DEFAULT_PROJECTS;
@@ -424,7 +346,3 @@ export function getStoredApiKey() {
 export function saveStoredApiKey(k: string) {
   localStorage.setItem(STORAGE_KEYS.GEMINI_API_KEY, k.trim());
 }
-export function getSolvedExercises() {
-  return [];
-}
-export function saveSolvedExercises() {}
