@@ -13,7 +13,17 @@
   | 'php'
   | 'ruby';
 
-export type IdeTheme = 'obsidian' | 'vercel' | 'tokyo-night';
+export type IdeTheme = 'tokyo-night' | 'obsidian' | 'vercel';
+
+export interface CodeProject {
+  id: string;
+  title: string;
+  language: SupportedLanguage;
+  code: string;
+  notes: string;
+  tags: string[];
+  updatedAt: string;
+}
 
 export interface PromptPreset {
   id: string;
@@ -23,33 +33,24 @@ export interface PromptPreset {
   temperature: number;
 }
 
-export interface CodeProject {
+export interface IdeExtensionPlugin {
   id: string;
-  title: string;
-  language: SupportedLanguage;
-  code: string;
-  notes: string;
-  tags?: string[];
-  updatedAt: string;
-}
-
-export interface ExerciseTestCase {
-  input: string;
-  expected: string;
-  explanation?: string;
-}
-
-export interface ExerciseItem {
-  id: string;
-  title: string;
-  difficulty: 'Easy' | 'Medium' | 'Hard';
-  category: string;
+  name: string;
+  publisher: string;
+  version: string;
+  category: 'Language' | 'Visualizer' | 'Linter' | 'AI';
   description: string;
-  functionName: string;
-  starterCode: string;
-  starterCodeByLang?: Partial<Record<SupportedLanguage, string>>;
-  solutionCode: string;
-  testCases: ExerciseTestCase[];
+  enabled: boolean;
+  capabilities: string[];
+}
+
+export interface SandboxExecutionResult {
+  success: boolean;
+  logs: string[];
+  returnValue?: string;
+  error?: string;
+  durationMs: number;
+  mode: string;
 }
 
 export interface TraceFrame {
@@ -77,26 +78,9 @@ export interface VariableHistorySeries {
 
 export interface VisualArrayInspection {
   arrayName: string;
-  elements: (string | number)[];
-  pointers: Record<number, string[]>;
-  rangeStart?: number;
-  rangeEnd?: number;
-  targetValue?: string | number;
-}
-
-export interface AiComposerStep {
-  id: string;
-  title: string;
-  detail: string;
-  status: 'pending' | 'running' | 'done';
-}
-
-export interface FileCheckpoint {
-  id: string;
-  fileId: string;
-  label: string;
-  timestamp: string;
-  content: string;
+  elements: number[];
+  highlights: number[];
+  pointers: Record<string, number>;
 }
 
 export interface BenchmarkRunSample {
@@ -105,31 +89,29 @@ export interface BenchmarkRunSample {
   opsPerSec: number;
 }
 
-export interface SandboxExecutionResult {
-  success: boolean;
-  logs: string[];
-  returnValue?: string;
-  error?: string;
-  errorLine?: number;
-  durationMs: number;
-  mode: 'native-js' | 'polyglot-emulated';
-}
-
 export interface DiffLine {
-  type: 'same' | 'add' | 'remove';
+  type: 'unchanged' | 'added' | 'removed';
   content: string;
-  oldLine?: number;
-  newLine?: number;
+  lineNumberOriginal?: number;
+  lineNumberModified?: number;
 }
 
-export interface CodeDiagnostic {
+export interface ExerciseTestCase {
+  input: string;
+  expected: string;
+}
+
+export interface ExerciseItem {
   id: string;
-  line: number;
-  severity: 'error' | 'warning' | 'info';
-  rule: string;
-  message: string;
-  quickFixLabel?: string;
-  replacementLine?: string;
+  title: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  category: string;
+  description: string;
+  functionName: string;
+  starterCode: string;
+  starterCodeByLang?: Partial<Record<SupportedLanguage, string>>;
+  solutionCode: string;
+  testCases: ExerciseTestCase[];
 }
 
 export interface ComplexityReport {
@@ -140,38 +122,5 @@ export interface ComplexityReport {
   maxLoopDepth: number;
   lineCount: number;
   functionCount: number;
-  diagnostics: CodeDiagnostic[];
-}
-
-export interface WorkspaceAssertionResult {
-  label: string;
-  passed: boolean;
-  detail: string;
-}
-
-export interface WorkspaceTestFileResult {
-  fileId: string;
-  filePath: string;
-  passed: boolean;
-  durationMs: number;
-  assertions: WorkspaceAssertionResult[];
-  error?: string;
-}
-
-export interface IdeExtensionPlugin {
-  id: string;
-  name: string;
-  publisher: string;
-  version: string;
-  category: 'Language' | 'Linter' | 'AI' | 'Visualizer';
-  description: string;
-  enabled: boolean;
-  capabilities: string[];
-}
-
-export interface ToastNotification {
-  id: string;
-  title: string;
-  detail?: string;
-  tone: 'success' | 'info' | 'warning';
+  diagnostics: Array<{ line: number; message: string; severity: 'info' | 'warn' | 'error' }>;
 }
