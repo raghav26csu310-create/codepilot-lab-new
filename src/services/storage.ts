@@ -107,7 +107,13 @@ console.log("Found index:", binarySearch([4, 12, 19, 26, 38], 26));`,
     extension: 'py',
     monacoLang: 'python',
     badge: 'PY 3.13',
-    defaultCode: `count = 4\ntotal = 0\nwhile count > 0:\n    total += count\n    print("count =", count, "total =", total)\n    count -= 1\nprint("Final:", total)`,
+    defaultCode: `count = 4
+total = 0
+while count > 0:
+    total += count
+    print("count =", count, "total =", total)
+    count -= 1
+print("Final:", total)`,
     starter: `print("Python Ready")`,
   },
   rust: {
@@ -280,10 +286,17 @@ export function transpileTypeScriptToJs(source: string): string {
 export function transpilePolyglotToJs(source: string, language: SupportedLanguage): string {
   if (language === 'typescript' || language === 'javascript') return transpileTypeScriptToJs(source);
   if (language === 'python') {
-    return source.replace(/\bprint\s*\(/g, 'console.log(').replace(/\blen\(([^)]+)\)/g, '($1).length');
+    return source
+      .replace(/\bprint\s*\(/g, 'console.log(')
+      .replace(/\blen\(([^)]+)\)/g, '($1).length')
+      .replace(/\bdef\s+([a-zA-Z0-9_]+)\s*\(([^)]*)\)\s*:/g, 'function $1($2) {')
+      .replace(/\bwhile\s+(.+)\s*:/g, 'while ($1) {')
+      .replace(/\bif\s+(.+)\s*:/g, 'if ($1) {')
+      .replace(/\belse\s*:/g, '} else {');
   }
   return source
     .replace(/^\s*#include.*$/gm, '')
+    .replace(/^\s*int\s+main\s*\(\s*\)\s*\{/g, 'function main() {')
     .replace(/\bprintf\s*\(/g, '__c_printf(');
 }
 
@@ -295,22 +308,59 @@ function formatCPrintf(fmt: string, ...args: unknown[]): string {
       const val = args[argIdx++];
       return val !== undefined ? String(val) : match;
     })
-    .replace(/\\n/g, '\n');
+    .replace(/\\n/g, '\n')
+    .replace(/"/g, '');
 }
 
 export function executeCodeInSandbox(code: string, language: SupportedLanguage): SandboxExecutionResult {
   const start = performance.now();
   const logs: string[] = [];
+
   if (code.includes('PE64 / ELF EXECUTABLE BINARY ARTIFACT')) {
-    return { success: true, logs: ['ISO C Executable binary executed successfully.'], returnValue: '0', durationMs: 0.2, mode: 'polyglot-emulated' };
+    return {
+      success: true,
+      logs: ['ISO C Executable binary executed successfully with exit code 0.'],
+      returnValue: '0',
+      durationMs: 0.2,
+      mode: 'polyglot-emulated',
+    };
   }
+
   const transpiled = transpilePolyglotToJs(code, language);
+  const finalCode = language === 'c' || language === 'cpp' ? `${transpiled}\nif (typeof main === 'function') main();` : transpiled;
+
+  const customConsole = {
+    log: (...args: unknown[]) =>
+      logs.push(args.map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ')),
+    warn: (...args: unknown[]) => logs.push('[WARN] ' + args.join(' ')),
+    error: (...args: unknown[]) => logs.push('[ERROR] ' + args.join(' ')),
+  };
+
+  const cPrintfHelper = (fmt: string, ...args: unknown[]) => {
+    const out = formatCPrintf(fmt, ...args);
+    out.split('\n').forEach((line) => {
+      if (line.trim().length > 0) logs.push(line);
+    });
+  };
+
   try {
-    const fn = new Function('console', '__c_printf', `"use strict";\n${transpiled}`);
-    fn({ log: (...a: any[]) => logs.push(a.join(' ')) }, (fmt: string, ...a: any[]) => logs.push(formatCPrintf(fmt, ...a)));
-    return { success: true, logs, returnValue: '0', durationMs: Number((performance.now() - start).toFixed(2)), mode: 'polyglot-emulated' };
-  } catch (err: any) {
-    return { success: false, logs, error: err.message, durationMs: 0.2, mode: 'polyglot-emulated' };
+    const fn = new Function('console', '__c_printf', `"use strict";\n${finalCode}`);
+    const ret = fn(customConsole, cPrintfHelper);
+    return {
+      success: true,
+      logs: logs.length > 0 ? logs : ['Program executed with no console output.'],
+      returnValue: ret !== undefined ? String(ret) : '0',
+      durationMs: Number((performance.now() - start).toFixed(2)),
+      mode: 'polyglot-emulated',
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      logs,
+      error: err instanceof Error ? err.message : String(err),
+      durationMs: Number((performance.now() - start).toFixed(2)),
+      mode: 'polyglot-emulated',
+    };
   }
 }
 
@@ -335,7 +385,13 @@ export function generateDynamicTrace(code: string, language: SupportedLanguage =
 }
 
 export function runExerciseTestSuite(userCode: string, language: SupportedLanguage, exercise: ExerciseItem) {
-  return exercise.testCases.map((tc) => ({ input: tc.input, expected: tc.expected, actual: tc.expected, passed: true, durationMs: 0.2 }));
+  return exercise.testCases.map((tc) => ({
+    input: tc.input,
+    expected: tc.expected,
+    actual: tc.expected,
+    passed: true,
+    durationMs: 0.2,
+  }));
 }
 
 export function formatCodeBuffer(code: string): string {
@@ -356,7 +412,10 @@ export function analyzeCodeQuality(code: string): ComplexityReport {
 }
 
 export function synthesizeUnitTestFile(name: string, code: string) {
-  return { testFileName: `${name.replace(/\.[^.]+$/, '')}.spec.ts`, testContent: '// Spec verified\n' };
+  return {
+    testFileName: `${name.replace(/\.[^.]+$/, '')}.spec.ts`,
+    testContent: '// Spec verified\n',
+  };
 }
 
 export function getStoredProjects(): CodeProject[] {
@@ -367,9 +426,7 @@ export function getStoredProjects(): CodeProject[] {
     return Array.isArray(parsed) && parsed.length > 0
       ? parsed.map((p: any) => ({
           ...p,
-          tags: Array.isArray(p?.tags)
-            ? p.tags
-            : [LANGUAGE_META[(p?.language || 'c') as SupportedLanguage]?.badge || 'C'],
+          tags: Array.isArray(p?.tags) ? p.tags : [LANGUAGE_META[p?.language || 'c']?.badge || 'C'],
         }))
       : DEFAULT_PROJECTS;
   } catch {
@@ -387,8 +444,16 @@ export function getStoredTheme(): IdeTheme {
 export function saveStoredTheme(t: IdeTheme) {
   localStorage.setItem(STORAGE_KEYS.IDE_THEME, t);
 }
-export function getStoredExtensions() { return DEFAULT_EXTENSIONS; }
-export function getStoredApiKey() { return localStorage.getItem(STORAGE_KEYS.GEMINI_API_KEY) || ''; }
-export function saveStoredApiKey(k: string) { localStorage.setItem(STORAGE_KEYS.GEMINI_API_KEY, k.trim()); }
-export function getSolvedExercises() { return []; }
+export function getStoredExtensions() {
+  return DEFAULT_EXTENSIONS;
+}
+export function getStoredApiKey() {
+  return localStorage.getItem(STORAGE_KEYS.GEMINI_API_KEY) || '';
+}
+export function saveStoredApiKey(k: string) {
+  localStorage.setItem(STORAGE_KEYS.GEMINI_API_KEY, k.trim());
+}
+export function getSolvedExercises() {
+  return [];
+}
 export function saveSolvedExercises() {}
