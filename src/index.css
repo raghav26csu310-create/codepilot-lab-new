@@ -91,6 +91,12 @@ button:hover {
   border-color: rgba(148, 163, 184, 0.3);
 }
 
+button.active-tool {
+  background: rgba(6, 182, 212, 0.16);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
 select,
 input,
 textarea {
@@ -526,12 +532,99 @@ textarea {
   font-weight: 600;
 }
 
+/* Inline AI Command Bar */
+.wb-inline-ai-bar {
+  background: rgba(15, 17, 26, 0.96);
+  border-bottom: 1px solid rgba(34, 211, 238, 0.35);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wb-inline-ai-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wb-inline-ai-input {
+  flex: 1;
+}
+
+.wb-inline-ai-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.wb-inline-ai-chips button {
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 99px;
+}
+
+.wb-inline-ai-preview {
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(30, 27, 75, 0.4);
+  border: 1px solid rgba(129, 140, 248, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wb-inline-ai-exp {
+  font-size: 12px;
+  color: #e2e8f0;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.wb-inline-ai-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Editor Canvas & Working Split View */
 .wb-editor-canvas {
   flex: 1;
   min-height: 180px;
   display: flex;
+  width: 100%;
+  overflow: hidden;
 }
 
+.wb-editor-pane {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.wb-split-right-pane {
+  border-left: 1px solid var(--border-hairline);
+}
+
+.wb-split-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 10px;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-hairline);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* Monaco Active Trace Line Highlight */
+.monaco-active-trace-line {
+  background: rgba(34, 211, 238, 0.14) !important;
+  border-left: 3px solid #22d3ee !important;
+}
+
+/* Bottom Tracer Dock */
 .wb-bottom-dock {
   height: 205px;
   display: flex;
@@ -634,7 +727,7 @@ textarea {
 }
 
 .wb-trace-explain-card {
-  width: 280px;
+  width: 300px;
   padding: 10px 12px;
   border-radius: 8px;
   background: rgba(19, 22, 34, 0.9);
@@ -659,7 +752,7 @@ textarea {
 }
 
 .wb-trace-var-card {
-  min-width: 190px;
+  min-width: 175px;
   padding: 10px 12px;
   border-radius: 8px;
   background: rgba(19, 22, 34, 0.9);
@@ -670,9 +763,15 @@ textarea {
   gap: 8px;
 }
 
+.wb-trace-var-card.var-changed {
+  border-color: rgba(245, 158, 11, 0.55);
+  background: rgba(245, 158, 11, 0.08);
+}
+
 .wb-var-top {
   display: flex;
   justify-content: space-between;
+  gap: 8px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 11.5px;
 }
@@ -826,7 +925,7 @@ textarea {
   gap: 14px;
 }
 
-/* Command Center & Other Slides Styling */
+/* Command Center Styling */
 .cc-container {
   flex: 1;
   overflow-y: auto;
@@ -936,4 +1035,136 @@ textarea {
   font-weight: 700;
   color: var(--accent-cyan);
   text-transform: uppercase;
+}
+
+/* Coding Dojo Full 3-Pane Layout */
+.dojo-shell {
+  display: grid;
+  grid-template-columns: 280px 380px minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+.dojo-sidebar {
+  background: var(--bg-primary);
+  border-right: 1px solid var(--border-hairline);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.dojo-sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dojo-filter-pills {
+  display: flex;
+  gap: 6px;
+}
+
+.dojo-exercise-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dojo-exercise-item {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--bg-surface-1);
+  border: 1px solid var(--border-hairline);
+  cursor: pointer;
+}
+
+.dojo-exercise-item.active {
+  border-color: var(--accent-cyan);
+  background: rgba(6, 182, 212, 0.1);
+}
+
+.dojo-problem-pane {
+  padding: 18px;
+  background: var(--bg-canvas);
+  border-right: 1px solid var(--border-hairline);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.dojo-section-box {
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--bg-surface-1);
+  border: 1px solid var(--border-hairline);
+}
+
+.dojo-testcase-card {
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-hairline);
+}
+
+.dojo-editor-pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--bg-editor);
+}
+
+/* Project Vault Full Layout */
+.vault-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.vault-controls-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.vault-filter-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.vault-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+}
+
+.vault-project-card {
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--bg-surface-1);
+  border: 1px solid var(--border-hairline);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.vault-code-preview {
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-hairline);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #38bdf8;
+  overflow-x: auto;
 }
