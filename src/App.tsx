@@ -1644,7 +1644,7 @@ export function App() {
                     if (results.every((r) => r.passed) && !solvedIds.includes(activeExercise.id)) {
                       const next = [...solvedIds, activeExercise.id];
                       setSolvedIds(next);
-                      saveSolvedExercises(next);
+                      saveSolvedExercises();
                     }
                   }}
                 >
@@ -1739,7 +1739,7 @@ export function App() {
                   !q ||
                   p.title.toLowerCase().includes(q) ||
                   p.notes.toLowerCase().includes(q) ||
-                  p.tags.some((t) => t.toLowerCase().includes(q));
+                  (p.tags ?? []).some((t) => t.toLowerCase().includes(q));
                 return matchesLang && matchesQuery;
               })
               .map((proj) => (
@@ -1766,7 +1766,7 @@ export function App() {
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                      {proj.tags.map((t, idx) => (
+                      {(proj.tags ?? []).map((t, idx) => (
                         <span key={idx} className="brand-version-pill" style={{ fontSize: 10 }}>
                           {t}
                         </span>
