@@ -102,26 +102,11 @@ export function App() {
       content: LANGUAGE_META.python.defaultCode,
     },
     {
-      id: 'f-ts',
-      name: 'telemetry.ts',
-      folder: 'src',
-      language: 'typescript',
-      content: LANGUAGE_META.typescript.defaultCode,
-    },
-    {
       id: 't-1',
       name: 'algorithm.spec.ts',
       folder: 'tests',
       language: 'typescript',
-      content: '// Unit test suite for binarySearch\nconsole.log("PASS: algorithm.spec.ts");',
-    },
-    {
-      id: 't-2',
-      name: 'main.spec.ts',
-      folder: 'tests',
-      language: 'typescript',
-      content: '// Auto-verified main spec\nconsole.log("PASS: main.spec.ts");',
-      dirty: true,
+      content: '// Unit test suite\nconsole.log("PASS");',
     },
   ]);
 
@@ -164,7 +149,7 @@ export function App() {
     {
       id: 'welcome',
       title: 'INTERACTIVE SYSTEMS MENTOR',
-      text: 'Ready on src/main.c. Click Copy or Insert on any AI code snippet to paste it directly into your editor.',
+      text: 'Ready on src/main.c. Click Copy or Insert on any AI code snippet.',
     },
   ]);
 
@@ -448,7 +433,6 @@ export function App() {
       {activeView === 'workbench' && (
         <div className="wb-shell">
           <div className="wb-main-grid">
-            {/* FULL RESTORED 10-BUTTON ACTIVITY RAIL */}
             <aside className="wb-activity-rail">
               <div className="wb-rail-group">
                 <button className="wb-rail-btn active" title="Workspace Files">
@@ -456,14 +440,14 @@ export function App() {
                 </button>
                 <button
                   className="wb-rail-btn"
-                  title="Search Files"
+                  title="Inline AI"
                   onClick={() => setInlineAiOpen((o) => !o)}
                 >
                   <Search size={15} />
                 </button>
                 <button
                   className="wb-rail-btn"
-                  title="Git Source Control & Diff"
+                  title="Git Diff"
                   onClick={() => setDockTab('diff')}
                 >
                   <GitBranch size={15} />
@@ -471,23 +455,24 @@ export function App() {
                 </button>
                 <button
                   className="wb-rail-btn"
-                  title="Performance & Diagnostics"
+                  title="Diagnostics"
                   onClick={() => setDockTab('diagnostics')}
                 >
                   <Gauge size={15} />
                 </button>
                 <button
                   className="wb-rail-btn"
-                  title="AST Memory & Execution Tracer"
+                  title="Tracer"
                   onClick={() => setDockTab('tracer')}
                 >
                   <Network size={15} />
                 </button>
-                <button className="wb-rail-btn" title="Quick Run / Execute" onClick={handleRunCode}>
+                <button className="wb-rail-btn" title="Run Code" onClick={handleRunCode}>
                   <Zap size={15} />
                 </button>
               </div>
 
+              {/* RESTORED ORIGINAL RAIL ACTIONS */}
               <div className="wb-rail-group">
                 <button
                   className="wb-rail-btn"
@@ -498,12 +483,8 @@ export function App() {
                 </button>
                 <button
                   className="wb-rail-btn"
-                  title="Keyboard Shortcuts & Keybindings"
-                  onClick={() =>
-                    alert(
-                      'CodePilot Lab Keybindings:\n• Ctrl+Enter: Run Code\n• Ctrl+S: Save Snapshot to Vault\n• Ctrl+P: Command Palette'
-                    )
-                  }
+                  title="Keyboard Shortcuts"
+                  onClick={() => alert('Shortcuts:\nCtrl+Enter: Run\nCtrl+S: Save')}
                 >
                   <Keyboard size={15} />
                 </button>
@@ -511,17 +492,17 @@ export function App() {
                   className="wb-rail-btn"
                   title="Import Workspace JSON"
                   onClick={() => {
-                    const json = prompt('Paste exported Vault JSON to import snapshots:');
+                    const json = prompt('Paste exported Vault JSON:');
                     if (json) {
                       try {
                         const parsed = JSON.parse(json);
                         if (Array.isArray(parsed)) {
                           setProjects(parsed);
                           saveStoredProjects(parsed);
-                          alert('Successfully imported projects into Vault!');
+                          alert('Imported successfully!');
                         }
                       } catch {
-                        alert('Invalid JSON.');
+                        alert('Invalid JSON');
                       }
                     }
                   }}
@@ -530,14 +511,14 @@ export function App() {
                 </button>
                 <button
                   className="wb-rail-btn"
-                  title="Export / Download Snapshot"
-                  onClick={() => handleSaveToVault('Exported Snapshot')}
+                  title="Export Snapshot"
+                  onClick={() => handleSaveToVault('Export Snapshot')}
                 >
                   <Download size={15} />
                 </button>
                 <button
                   className="wb-rail-btn"
-                  title="Command Palette & Settings"
+                  title="Settings"
                   onClick={() => setActiveView('settings')}
                 >
                   <Command size={15} />
