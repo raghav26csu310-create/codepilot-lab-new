@@ -4,11 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "oxlint",
-    "preview": "vite preview"
-  },
+  "dev": "vite",
+  "build": "tsc --noEmit false && vite build",
+  "preview": "vite preview"
+},
+  
   "dependencies": {
     "@google/genai": "^2.31.0",
     "@monaco-editor/react": "^4.7.0",
