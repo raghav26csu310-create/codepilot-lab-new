@@ -426,7 +426,9 @@ export function getStoredProjects(): CodeProject[] {
     return Array.isArray(parsed) && parsed.length > 0
       ? parsed.map((p: any) => ({
           ...p,
-          tags: Array.isArray(p?.tags) ? p.tags : [LANGUAGE_META[p?.language || 'c']?.badge || 'C'],
+          tags: Array.isArray(p?.tags)
+            ? p.tags
+            : [LANGUAGE_META[(p?.language || 'c') as SupportedLanguage]?.badge || 'C'],
         }))
       : DEFAULT_PROJECTS;
   } catch {
