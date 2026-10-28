@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type {
   CodeProject,
-  FileCheckpoint,
   SupportedLanguage,
 } from '../types';
 import {
@@ -22,6 +21,14 @@ export interface VfsFile {
   isStaged: boolean;
   isBinaryExe?: boolean;
   lastCompiledAt?: string;
+}
+
+interface FileCheckpoint {
+  id: string;
+  fileId: string;
+  label: string;
+  timestamp: string;
+  content: string;
 }
 
 export interface GitCommitRecord {
